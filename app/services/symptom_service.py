@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app import repository
-from app.schemas import SymptomCreate, SymptomRead
+from app.schemas import DateRange, SymptomCreate, SymptomRead
 
 
 def log_symptom(session: Session, patient_id: int, new_symptom: SymptomCreate) -> SymptomRead:
@@ -17,3 +17,14 @@ def log_symptom(session: Session, patient_id: int, new_symptom: SymptomCreate) -
         severity=new_symptom.severity,
     )
     return SymptomRead.model_validate(entry)
+
+
+def list_symptoms(session: Session, patient_id: int, date_range: DateRange) -> list[SymptomRead]:
+    """A patient's symptoms within the date range, newest first."""
+    entries = repository.list_symptoms(
+        session,
+        patient_id=patient_id,
+        start_date=date_range.start_date,
+        end_date=date_range.end_date,
+    )
+    return [SymptomRead.model_validate(entry) for entry in entries]

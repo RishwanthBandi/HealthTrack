@@ -2,12 +2,14 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.schemas import (
+    DATE_RANGE_ERROR_EXAMPLE,
     VALIDATION_ERROR_EXAMPLE,
+    DateRange,
     ErrorResponse,
     PatientId,
     SymptomCreate,
@@ -46,3 +48,32 @@ def log_symptom(
     Unknown extra fields are ignored. Returns the saved entry.
     """
     return symptom_service.log_symptom(session, patient_id, new_symptom)
+
+
+@router.get(
+    "",
+    response_model=list[SymptomRead],
+    summary="List a patient's symptoms",
+    responses={
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "model": ErrorResponse,
+            "description": "Invalid patient ID or dates. Every problem is listed in `details`.",
+            "content": {"application/json": {"example": DATE_RANGE_ERROR_EXAMPLE}},
+        },
+    },
+)
+def list_symptoms(
+    patient_id: PatientId,
+    date_range: Annotated[DateRange, Query()],
+    session: Annotated[Session, Depends(get_db)],
+) -> list[SymptomRead]:
+    """List a patient's symptoms, newest first (FR-02).
+
+    - `start_date` and `end_date` are optional and **inclusive** (`YYYY-MM-DD`).
+    - Only `start_date`: everything from that day on. Only `end_date`: everything up to it.
+    - Neither: all of the patient's symptoms.
+    - `start_date` after `end_date` is rejected.
+
+    Returns `[]` when there are no matching symptoms.
+    """
+    return symptom_service.list_symptoms(session, patient_id, date_range)

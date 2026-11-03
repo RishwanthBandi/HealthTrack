@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -167,3 +168,169 @@ def test_fr01_ignores_extra_unknown_fields(
     assert response.status_code == 201
     assert "mood" not in response.json()
     assert response.json()["id"] == 1
+
+
+def add_symptom(
+    db_session: Session, patient_id: int, symptom: str, date: str, severity: int = 3
+) -> None:
+    """Store one symptom directly in the test database."""
+    db_session.add(
+        Symptom(
+            patient_id=patient_id,
+            symptom=symptom,
+            date=datetime.date.fromisoformat(date),
+            severity=severity,
+        )
+    )
+    db_session.commit()
+
+
+@pytest.fixture
+def october_symptoms(db_session: Session) -> None:
+    """Patient 1 has entries on 1, 5, 10 and 15 Oct; patient 2 has one on 5 Oct."""
+    add_symptom(db_session, 1, "Headache", "2026-10-01")
+    add_symptom(db_session, 1, "Fever", "2026-10-05")
+    add_symptom(db_session, 1, "Cough", "2026-10-10")
+    add_symptom(db_session, 1, "Nausea", "2026-10-15")
+    add_symptom(db_session, 2, "Rash", "2026-10-05")
+
+
+def listed_dates(response: Response) -> list[str]:
+    """The dates of the listed symptoms, in the order the API returned them."""
+    return [entry["date"] for entry in response.json()]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_returns_only_symptoms_within_date_range(client: TestClient) -> None:
+    response = client.get(
+        "/patients/1/symptoms", params={"start_date": "2026-10-02", "end_date": "2026-10-12"}
+    )
+
+    assert response.status_code == 200
+    assert listed_dates(response) == ["2026-10-10", "2026-10-05"]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_includes_entries_on_start_date_and_end_date(client: TestClient) -> None:
+    response = client.get(
+        "/patients/1/symptoms", params={"start_date": "2026-10-05", "end_date": "2026-10-10"}
+    )
+
+    assert listed_dates(response) == ["2026-10-10", "2026-10-05"]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_accepts_same_start_and_end_date(client: TestClient) -> None:
+    response = client.get(
+        "/patients/1/symptoms", params={"start_date": "2026-10-05", "end_date": "2026-10-05"}
+    )
+
+    assert response.status_code == 200
+    assert listed_dates(response) == ["2026-10-05"]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_returns_only_the_requested_patients_symptoms(client: TestClient) -> None:
+    response = client.get("/patients/2/symptoms")
+
+    assert response.status_code == 200
+    assert [entry["symptom"] for entry in response.json()] == ["Rash"]
+    assert all(entry["patient_id"] == 2 for entry in response.json())
+
+
+def test_fr02_sorts_symptoms_newest_first(client: TestClient, db_session: Session) -> None:
+    add_symptom(db_session, 1, "Fever", "2026-10-05")
+    add_symptom(db_session, 1, "Headache", "2026-10-20")
+    add_symptom(db_session, 1, "Cough", "2026-10-01")
+    add_symptom(db_session, 1, "Nausea", "2026-10-20")
+
+    response = client.get("/patients/1/symptoms")
+
+    assert [(entry["date"], entry["symptom"]) for entry in response.json()] == [
+        ("2026-10-20", "Nausea"),
+        ("2026-10-20", "Headache"),
+        ("2026-10-05", "Fever"),
+        ("2026-10-01", "Cough"),
+    ]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_returns_all_fields_of_each_symptom(client: TestClient) -> None:
+    response = client.get("/patients/2/symptoms")
+
+    entry = response.json()[0]
+    assert set(entry) == {"id", "patient_id", "symptom", "notes", "date", "severity", "created_at"}
+    assert entry["created_at"].endswith("Z")
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_returns_empty_list_when_no_symptoms_in_range(client: TestClient) -> None:
+    response = client.get(
+        "/patients/1/symptoms", params={"start_date": "2026-09-01", "end_date": "2026-09-30"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_returns_empty_list_for_patient_who_never_logged(client: TestClient) -> None:
+    response = client.get("/patients/99/symptoms")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_only_start_date_returns_everything_from_that_date(client: TestClient) -> None:
+    response = client.get("/patients/1/symptoms", params={"start_date": "2026-10-10"})
+
+    assert listed_dates(response) == ["2026-10-15", "2026-10-10"]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_only_end_date_returns_everything_up_to_that_date(client: TestClient) -> None:
+    response = client.get("/patients/1/symptoms", params={"end_date": "2026-10-05"})
+
+    assert listed_dates(response) == ["2026-10-05", "2026-10-01"]
+
+
+@pytest.mark.usefixtures("october_symptoms")
+def test_fr02_no_dates_returns_all_of_the_patients_symptoms(client: TestClient) -> None:
+    response = client.get("/patients/1/symptoms")
+
+    assert listed_dates(response) == ["2026-10-15", "2026-10-10", "2026-10-05", "2026-10-01"]
+
+
+def test_fr02_rejects_start_date_after_end_date(client: TestClient) -> None:
+    response = client.get(
+        "/patients/1/symptoms", params={"start_date": "2026-10-10", "end_date": "2026-10-01"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["details"] == [
+        {"field": "end_date", "message": "start_date must be on or before end_date"}
+    ]
+
+
+@pytest.mark.parametrize("field", ["start_date", "end_date"])
+@pytest.mark.parametrize("value", ["2026-13-45", "yesterday", "2026/10/01", "2026-1-2", ""])
+def test_fr02_rejects_invalid_date_format(client: TestClient, field: str, value: str) -> None:
+    response = client.get("/patients/1/symptoms", params={field: value})
+
+    assert response.status_code == 422
+    assert response.json()["error"]["details"] == [
+        {"field": field, "message": f"{field} must be a valid date in YYYY-MM-DD format"}
+    ]
+
+
+@pytest.mark.parametrize("patient_id", ["0", "-1", "abc"])
+def test_fr02_rejects_patient_id_that_is_not_a_positive_whole_number(
+    client: TestClient, patient_id: str
+) -> None:
+    response = client.get(f"/patients/{patient_id}/symptoms")
+
+    assert response.status_code == 422
+    assert response.json()["error"]["details"] == [
+        {"field": "patient_id", "message": "patient_id must be a positive whole number"}
+    ]

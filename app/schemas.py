@@ -5,7 +5,7 @@ import re
 from typing import Annotated, Any
 
 from fastapi import Path
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 from pydantic_core import PydanticCustomError
 
 SYMPTOM_MAX_LENGTH = 100
@@ -123,6 +123,36 @@ class SymptomCreate(BaseModel):
         return value
 
 
+class DateRange(BaseModel):
+    """Optional, inclusive date range filter, given as query parameters."""
+
+    start_date: datetime.date | None = Field(
+        default=None, description="First day to include (YYYY-MM-DD). Leave out for no limit."
+    )
+    end_date: datetime.date | None = Field(
+        default=None, description="Last day to include (YYYY-MM-DD). Leave out for no limit."
+    )
+
+    @field_validator("start_date", "end_date", mode="before")
+    @classmethod
+    def check_date_format(cls, value: Any, info: ValidationInfo) -> datetime.date | None:
+        """Accept only a real YYYY-MM-DD date, or nothing."""
+        if value is None:
+            return None
+        return parse_iso_date(info.field_name or "date", value)
+
+    @field_validator("end_date")
+    @classmethod
+    def check_order(cls, value: datetime.date | None, info: ValidationInfo) -> datetime.date | None:
+        """start_date must not be after end_date."""
+        start_date = info.data.get("start_date")
+        if value is not None and start_date is not None and start_date > value:
+            raise PydanticCustomError(
+                "date_range_order", "start_date must be on or before end_date"
+            )
+        return value
+
+
 class SymptomRead(BaseModel):
     """A saved symptom entry."""
 
@@ -186,5 +216,13 @@ VALIDATION_ERROR_EXAMPLE = {
         "code": "validation_error",
         "message": "Invalid input.",
         "details": [{"field": "severity", "message": "severity must be between 1 and 5"}],
+    }
+}
+
+DATE_RANGE_ERROR_EXAMPLE = {
+    "error": {
+        "code": "validation_error",
+        "message": "Invalid input.",
+        "details": [{"field": "end_date", "message": "start_date must be on or before end_date"}],
     }
 }
