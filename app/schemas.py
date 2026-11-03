@@ -196,6 +196,50 @@ class SymptomRead(BaseModel):
         return value
 
 
+class FrequentSymptom(BaseModel):
+    """One of the most frequent symptoms: how often it was logged and its own average severity."""
+
+    symptom: str = Field(description="Symptom name in lowercase.")
+    count: int = Field(description="How many entries in the period have this symptom.")
+    average_severity: float = Field(
+        description="Average severity of this symptom's entries only, rounded to 2 decimals."
+    )
+
+
+class Insights(BaseModel):
+    """Most frequent symptom(s), each with its own average, and the overall average severity."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "patient_id": 1,
+                    "start_date": "2026-11-01",
+                    "end_date": "2026-11-07",
+                    "total_entries": 5,
+                    "most_frequent_symptoms": [
+                        {"symptom": "headache", "count": 3, "average_severity": 3.0}
+                    ],
+                    "overall_average_severity": 3.4,
+                }
+            ]
+        }
+    )
+
+    patient_id: int
+    start_date: datetime.date | None = Field(description="As requested; null means no limit.")
+    end_date: datetime.date | None = Field(description="As requested; null means no limit.")
+    total_entries: int = Field(description="Number of entries in the period.")
+    most_frequent_symptoms: list[FrequentSymptom] = Field(
+        description="All symptoms with the highest count (ties included), sorted by name. "
+        "Names are compared in lowercase with spaces trimmed. Empty if there are no entries."
+    )
+    overall_average_severity: float | None = Field(
+        description="Overall average severity of all entries in the period, rounded to "
+        "2 decimals (half up). Null if there are no entries."
+    )
+
+
 class ErrorDetail(BaseModel):
     """One problem with one field."""
 
