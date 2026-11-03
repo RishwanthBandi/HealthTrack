@@ -10,6 +10,7 @@ import requests
 API_BASE_URL = os.environ.get("HEALTHTRACK_API_URL", "http://localhost:8000")
 REQUEST_TIMEOUT_SECONDS = 10
 CANNOT_REACH_API_MESSAGE = "Cannot reach the HealthTrack API. Is it running?"
+API_TOO_SLOW_MESSAGE = "The HealthTrack API took too long to answer. Please try again."
 
 
 class ApiError(Exception):
@@ -89,18 +90,32 @@ def send_request(
         response = requests.request(
             method, url, json=json, params=params, timeout=REQUEST_TIMEOUT_SECONDS
         )
+    except requests.Timeout as error:
+        raise ApiError(API_TOO_SLOW_MESSAGE) from error
     except requests.RequestException as error:
         raise ApiError(CANNOT_REACH_API_MESSAGE) from error
     if not response.ok:
         raise error_from_response(response)
-    return response.json()
+    try:
+        return response.json()
+    except ValueError as error:
+        raise ApiError(unexpected_response_message(response.status_code)) from error
 
 
 def error_from_response(response: requests.Response) -> ApiError:
     """Turn an API error response (standard error format) into an ApiError."""
     try:
         error = response.json()["error"]
-    except (ValueError, KeyError, TypeError):
-        return ApiError(f"Unexpected response from the API (status {response.status_code}).")
-    details = [detail["message"] for detail in error.get("details", [])]
-    return ApiError(error["message"], details)
+        message = error["message"]
+        details = [detail["message"] for detail in error.get("details", [])]
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return ApiError(unexpected_response_message(response.status_code))
+    return ApiError(message, details)
+
+
+def unexpected_response_message(status_code: int) -> str:
+    """Message for a response the app cannot read, e.g. an HTML error page from a proxy."""
+    return (
+        f"The HealthTrack API sent an answer the app could not read (status {status_code}). "
+        "Please try again later."
+    )

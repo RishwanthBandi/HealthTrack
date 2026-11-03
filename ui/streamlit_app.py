@@ -1,11 +1,15 @@
 """HealthTrack Streamlit UI: screens for logging symptoms and viewing insights."""
 
 import datetime
+import logging
+from collections.abc import Callable
 from typing import Any
 
 import streamlit as st
 
 import api_client
+
+logger = logging.getLogger(__name__)
 
 SEVERITY_LABELS = {
     1: "1 – very mild",
@@ -15,6 +19,10 @@ SEVERITY_LABELS = {
     5: "5 – very severe",
 }
 NOTES_PREVIEW_LENGTH = 60
+UNEXPECTED_ERROR_MESSAGE = (
+    "Something went wrong while showing this screen. Please try again. "
+    "If it keeps happening, restart the app."
+)
 # Widest possible range, so the date box never rejects or replaces a date; the API decides.
 WIDEST_DATE_RANGE: dict[str, Any] = {
     "min_value": datetime.date.min,
@@ -27,6 +35,18 @@ def show_api_error(error: api_client.ApiError) -> None:
     st.error(error.message)
     for detail in error.details:
         st.markdown(f"- {detail}")
+
+
+def show_screen_safely(show_screen: Callable[[], None]) -> None:
+    """Run one screen; if anything unexpected fails, show a friendly message, not a traceback.
+
+    The real error is logged in the terminal running Streamlit, for debugging.
+    """
+    try:
+        show_screen()
+    except Exception:
+        logger.exception("Unexpected error in screen %s", show_screen.__name__)
+        st.error(UNEXPECTED_ERROR_MESSAGE)
 
 
 def show_log_symptom_screen() -> None:
@@ -256,8 +276,8 @@ st.title("HealthTrack")
 st.write("Track your daily symptoms and see simple insights.")
 log_tab, list_tab, insights_tab = st.tabs(["Log a symptom", "My symptoms", "Insights"])
 with log_tab:
-    show_log_symptom_screen()
+    show_screen_safely(show_log_symptom_screen)
 with list_tab:
-    show_my_symptoms_screen()
+    show_screen_safely(show_my_symptoms_screen)
 with insights_tab:
-    show_insights_screen()
+    show_screen_safely(show_insights_screen)
