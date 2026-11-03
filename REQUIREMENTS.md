@@ -68,7 +68,7 @@ A patient can log a symptom with a **symptom name**, optional **notes**, a **dat
 | `patient_id` is 0, negative or not a number | 422 error |
 | Extra unknown fields in the body | Ignored |
 
-**Status:** ⬜
+**Status:** ✅ (API; UI form follows in FR-06)
 
 ---
 
@@ -125,7 +125,7 @@ Severity must be between **1 and 5**, and the symptom must **not be empty**.
 | symptom longer than 100 characters | 422: too long (use `notes` for details) |
 | Several fields wrong at once | 422 listing all problems |
 
-**Status:** ⬜
+**Status:** ✅
 
 ---
 
@@ -263,9 +263,9 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 
 | FR | Endpoint / component | Tests | Status |
 |---|---|---|---|
-| FR-01 | `POST /patients/{patient_id}/symptoms` | | ⬜ |
+| FR-01 | `POST /patients/{patient_id}/symptoms` | `tests/test_symptoms.py`: `test_fr01_logs_symptom_and_returns_201_with_saved_record`, `test_fr01_saves_symptom_in_database_with_correct_date_and_severity`, `test_fr01_trims_symptom_and_notes_before_saving`, `test_fr01_stores_empty_or_whitespace_only_notes_as_null`, `test_fr01_accepts_missing_notes`, `test_fr01_accepts_notes_of_exactly_2000_characters`, `test_fr01_rejects_notes_longer_than_2000_characters`, `test_fr01_rejects_missing_date`, `test_fr01_rejects_date_that_is_not_a_real_yyyy_mm_dd_date`, `test_fr01_rejects_future_date`, `test_fr01_accepts_today_as_date`, `test_fr01_rejects_patient_id_that_is_not_a_positive_whole_number`, `test_fr01_ignores_extra_unknown_fields` | ✅ |
 | FR-02 | `GET /patients/{patient_id}/symptoms` | | ⬜ |
-| FR-03 | Schemas (validation) | | ⬜ |
+| FR-03 | Schemas (validation) | `tests/test_validation.py`: `test_fr03_validation_error_uses_standard_error_format`, `test_fr03_rejects_severity_outside_1_to_5`, `test_fr03_rejects_severity_that_is_not_a_whole_number`, `test_fr03_rejects_missing_severity`, `test_fr03_accepts_severity_boundaries_1_and_5`, `test_fr03_rejects_empty_or_whitespace_only_symptom`, `test_fr03_rejects_missing_symptom`, `test_fr03_rejects_symptom_that_is_not_text`, `test_fr03_rejects_symptom_longer_than_100_characters`, `test_fr03_accepts_symptom_of_exactly_100_characters`, `test_fr03_lists_all_problems_when_several_fields_are_wrong` | ✅ |
 | FR-04 | `GET /patients/{patient_id}/insights` | | ⬜ |
 | FR-05 | Error handlers | | ⬜ |
 | FR-06 | Streamlit UI | | ⬜ |
