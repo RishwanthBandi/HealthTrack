@@ -89,6 +89,7 @@ Full request/response examples are in REQUIREMENTS.md and in the auto-generated 
 | Separate `symptom` and `notes` | Detailed notes without breaking frequency counts | Patient fills two fields |
 | UI calls the API, never the DB | Validation lives in one place | UI needs the API running |
 | Insights computed on request | Always up to date, simple | Slower for very large data (fine here) |
+| No pagination on the symptom list | Simple; fine for local use | A patient with years of entries gets them all in one response |
 
 ## 7. Slices (build order)
 
