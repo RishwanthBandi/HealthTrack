@@ -1,6 +1,7 @@
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+src = [".", "ui"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
