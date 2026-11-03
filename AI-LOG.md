@@ -27,6 +27,15 @@ The README's **AI usage** section is written from this file.
 
 ---
 
+### 2. Very large patient ID crashed the API
+**📅 3 Nov · Area: Validation (FR-01, FR-02)**
+
+- **What the AI produced:** `patient_id` was only checked as "a positive whole number", so a huge ID passed validation and crashed the database with a plain 500 error.
+- **What I found / changed:** Asked Claude to review edge cases; it found the crash. I chose a maximum of 2,147,483,647 so too-big IDs get a clear 422 error, and had tests added for GET and POST.
+- **Why:** Invalid input must get a clear 422, never a crash. 2,147,483,647 is the standard integer limit, so it also works if the database changes later.
+
+---
+
 <!--
 Template for new entries (copy, paste above this comment and fill in):
 
