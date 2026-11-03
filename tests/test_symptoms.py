@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Symptom
+from tests.conftest import AddSymptom
 
 
 def test_fr01_logs_symptom_and_returns_201_with_saved_record(
@@ -192,29 +193,14 @@ def test_fr01_ignores_extra_unknown_fields(
     assert response.json()["id"] == 1
 
 
-def add_symptom(
-    db_session: Session, patient_id: int, symptom: str, date: str, severity: int = 3
-) -> None:
-    """Store one symptom directly in the test database."""
-    db_session.add(
-        Symptom(
-            patient_id=patient_id,
-            symptom=symptom,
-            date=datetime.date.fromisoformat(date),
-            severity=severity,
-        )
-    )
-    db_session.commit()
-
-
 @pytest.fixture
-def october_symptoms(db_session: Session) -> None:
+def october_symptoms(add_symptom: AddSymptom) -> None:
     """Patient 1 has entries on 1, 5, 10 and 15 Oct; patient 2 has one on 5 Oct."""
-    add_symptom(db_session, 1, "Headache", "2026-10-01")
-    add_symptom(db_session, 1, "Fever", "2026-10-05")
-    add_symptom(db_session, 1, "Cough", "2026-10-10")
-    add_symptom(db_session, 1, "Nausea", "2026-10-15")
-    add_symptom(db_session, 2, "Rash", "2026-10-05")
+    add_symptom(1, "Headache", "2026-10-01")
+    add_symptom(1, "Fever", "2026-10-05")
+    add_symptom(1, "Cough", "2026-10-10")
+    add_symptom(1, "Nausea", "2026-10-15")
+    add_symptom(2, "Rash", "2026-10-05")
 
 
 def listed_dates(response: Response) -> list[str]:
@@ -260,11 +246,11 @@ def test_fr02_returns_only_the_requested_patients_symptoms(client: TestClient) -
     assert all(entry["patient_id"] == 2 for entry in response.json())
 
 
-def test_fr02_sorts_symptoms_newest_first(client: TestClient, db_session: Session) -> None:
-    add_symptom(db_session, 1, "Fever", "2026-10-05")
-    add_symptom(db_session, 1, "Headache", "2026-10-20")
-    add_symptom(db_session, 1, "Cough", "2026-10-01")
-    add_symptom(db_session, 1, "Nausea", "2026-10-20")
+def test_fr02_sorts_symptoms_newest_first(client: TestClient, add_symptom: AddSymptom) -> None:
+    add_symptom(1, "Fever", "2026-10-05")
+    add_symptom(1, "Headache", "2026-10-20")
+    add_symptom(1, "Cough", "2026-10-01")
+    add_symptom(1, "Nausea", "2026-10-20")
 
     response = client.get("/patients/1/symptoms")
 

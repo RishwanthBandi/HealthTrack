@@ -1,7 +1,8 @@
 """Test app with a separate, fresh in-memory database for every test."""
 
+import datetime
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Protocol
 
 import pytest
 from fastapi.testclient import TestClient
@@ -11,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.db import get_db
 from app.main import app
-from app.models import Base
+from app.models import Base, Symptom
 
 
 @pytest.fixture
@@ -62,3 +63,41 @@ def valid_payload() -> dict[str, Any]:
         "date": "2026-11-02",
         "severity": 3,
     }
+
+
+class AddSymptom(Protocol):
+    """Stores one symptom directly in the test database."""
+
+    def __call__(
+        self,
+        patient_id: int,
+        symptom: str,
+        date: str,
+        severity: int = 3,
+        notes: str | None = None,
+    ) -> None: ...
+
+
+@pytest.fixture
+def add_symptom(db_session: Session) -> AddSymptom:
+    """Store symptoms directly in the test database, without going through the API."""
+
+    def add(
+        patient_id: int,
+        symptom: str,
+        date: str,
+        severity: int = 3,
+        notes: str | None = None,
+    ) -> None:
+        db_session.add(
+            Symptom(
+                patient_id=patient_id,
+                symptom=symptom,
+                notes=notes,
+                date=datetime.date.fromisoformat(date),
+                severity=severity,
+            )
+        )
+        db_session.commit()
+
+    return add
