@@ -28,19 +28,47 @@ def log_symptom(
 
     Values are sent exactly as entered; the API does all the validation.
     """
-    if not patient_id.strip():
-        raise ApiError("Invalid input.", ["patient_id is required"])
     payload = {
         "symptom": symptom,
         "notes": notes,
         "date": date.isoformat(),
         "severity": severity,
     }
+    return send_request("POST", patient_url(patient_id, "symptoms"), json=payload)
+
+
+def list_symptoms(
+    patient_id: str, start_date: datetime.date | None, end_date: datetime.date | None
+) -> list[dict[str, Any]]:
+    """A patient's symptoms in the date range, newest first, or raise ApiError.
+
+    Empty dates are left out of the request, meaning "no limit".
+    """
+    params = {}
+    if start_date is not None:
+        params["start_date"] = start_date.isoformat()
+    if end_date is not None:
+        params["end_date"] = end_date.isoformat()
+    return send_request("GET", patient_url(patient_id, "symptoms"), params=params)
+
+
+def patient_url(patient_id: str, resource: str) -> str:
+    """URL of a patient's resource, with the patient ID sent exactly as entered."""
+    if not patient_id.strip():
+        raise ApiError("Invalid input.", ["patient_id is required"])
+    return f"{API_BASE_URL}/patients/{quote(patient_id, safe='')}/{resource}"
+
+
+def send_request(
+    method: str,
+    url: str,
+    json: dict[str, Any] | None = None,
+    params: dict[str, str] | None = None,
+) -> Any:
+    """Send one request and return the JSON response, or raise ApiError."""
     try:
-        response = requests.post(
-            f"{API_BASE_URL}/patients/{quote(patient_id, safe='')}/symptoms",
-            json=payload,
-            timeout=REQUEST_TIMEOUT_SECONDS,
+        response = requests.request(
+            method, url, json=json, params=params, timeout=REQUEST_TIMEOUT_SECONDS
         )
     except requests.RequestException as error:
         raise ApiError(CANNOT_REACH_API_MESSAGE) from error
