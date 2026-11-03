@@ -145,8 +145,8 @@ Show the **most frequent symptom(s)** and the **average severity** for a period.
   "start_date": "2026-11-01",
   "end_date": "2026-11-07",
   "total_entries": 5,
-  "most_frequent_symptoms": [ { "symptom": "headache", "count": 3 } ],
-  "average_severity": 3.4
+  "most_frequent_symptoms": [ { "symptom": "headache", "count": 3, "average_severity": 3.0 } ],
+  "overall_average_severity": 3.4
 }
 ```
 
@@ -154,18 +154,20 @@ Show the **most frequent symptom(s)** and the **average severity** for a period.
 - Given a date range, when insights are requested, then the response contains the **most frequent symptom** and the **average severity** for that period.
 - Date-range rules are the same as FR-02 (inclusive, both optional, start ≤ end).
 - Frequency is counted on the `symptom` field only (not `notes`).
-- Average severity is rounded to 2 decimal places.
+- `overall_average_severity` is the average of **all** entries in the period (not only the most frequent symptoms).
+- Each item in `most_frequent_symptoms` also has its **own** `average_severity`: the average of that symptom's entries only.
+- All averages are rounded to 2 decimal places (half up: 2.125 → 2.13).
 
 **Edge cases**
 | Situation | Expected |
 |---|---|
-| No entries in the period | `200` with `total_entries: 0`, `most_frequent_symptoms: []`, `average_severity: null` |
-| Tie (e.g. Headache ×2, Fever ×2) | Both are returned in `most_frequent_symptoms` |
+| No entries in the period | `200` with `total_entries: 0`, `most_frequent_symptoms: []`, `overall_average_severity: null` |
+| Tie (e.g. Headache ×2, Fever ×2) | Both are returned in `most_frequent_symptoms`, each with its own `average_severity`; `overall_average_severity` stays the average of all entries |
 | `"Headache"`, `"headache"`, `" HEADACHE "` | Counted as the **same** symptom (compared in lowercase, trimmed) |
-| Only one entry | That entry is the most frequent; average = its severity |
+| Only one entry | That entry is the most frequent; its own average and `overall_average_severity` both equal its severity |
 | `start_date` after `end_date` | 422 error |
 
-**Status:** ⬜
+**Status:** ✅ (API; UI insights section follows in FR-06)
 
 ---
 
@@ -269,6 +271,6 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 | FR-01 | `POST /patients/{patient_id}/symptoms` | `tests/test_symptoms.py`: `test_fr01_logs_symptom_and_returns_201_with_saved_record`, `test_fr01_saves_symptom_in_database_with_correct_date_and_severity`, `test_fr01_trims_symptom_and_notes_before_saving`, `test_fr01_stores_empty_or_whitespace_only_notes_as_null`, `test_fr01_accepts_missing_notes`, `test_fr01_accepts_notes_of_exactly_2000_characters`, `test_fr01_rejects_notes_longer_than_2000_characters`, `test_fr01_rejects_missing_date`, `test_fr01_rejects_date_that_is_not_a_real_yyyy_mm_dd_date`, `test_fr01_rejects_future_date`, `test_fr01_accepts_today_as_date`, `test_fr01_rejects_patient_id_that_is_not_a_positive_whole_number`, `test_fr01_rejects_patient_id_larger_than_2147483647`, `test_fr01_accepts_largest_patient_id_2147483647`, `test_fr01_ignores_extra_unknown_fields` | ✅ |
 | FR-02 | `GET /patients/{patient_id}/symptoms` | `tests/test_symptoms.py`: `test_fr02_returns_only_symptoms_within_date_range`, `test_fr02_includes_entries_on_start_date_and_end_date`, `test_fr02_accepts_same_start_and_end_date`, `test_fr02_returns_only_the_requested_patients_symptoms`, `test_fr02_sorts_symptoms_newest_first`, `test_fr02_returns_all_fields_of_each_symptom`, `test_fr02_returns_empty_list_when_no_symptoms_in_range`, `test_fr02_returns_empty_list_for_patient_who_never_logged`, `test_fr02_only_start_date_returns_everything_from_that_date`, `test_fr02_only_end_date_returns_everything_up_to_that_date`, `test_fr02_no_dates_returns_all_of_the_patients_symptoms`, `test_fr02_rejects_start_date_after_end_date`, `test_fr02_rejects_invalid_date_format`, `test_fr02_rejects_patient_id_that_is_not_a_positive_whole_number`, `test_fr02_rejects_patient_id_larger_than_2147483647`, `test_fr02_accepts_largest_patient_id_2147483647` | ✅ |
 | FR-03 | Schemas (validation) | `tests/test_validation.py`: `test_fr03_validation_error_uses_standard_error_format`, `test_fr03_rejects_severity_outside_1_to_5`, `test_fr03_rejects_severity_that_is_not_a_whole_number`, `test_fr03_rejects_missing_severity`, `test_fr03_accepts_severity_boundaries_1_and_5`, `test_fr03_rejects_empty_or_whitespace_only_symptom`, `test_fr03_rejects_missing_symptom`, `test_fr03_rejects_symptom_that_is_not_text`, `test_fr03_rejects_symptom_longer_than_100_characters`, `test_fr03_accepts_symptom_of_exactly_100_characters`, `test_fr03_lists_all_problems_when_several_fields_are_wrong` | ✅ |
-| FR-04 | `GET /patients/{patient_id}/insights` | | ⬜ |
+| FR-04 | `GET /patients/{patient_id}/insights` | `tests/test_insights.py`: `test_fr04_returns_most_frequent_symptom_and_overall_average_severity`, `test_fr04_includes_entries_on_start_date_and_end_date`, `test_fr04_only_uses_the_requested_patients_entries`, `test_fr04_returns_all_tied_symptoms`, `test_fr04_gives_each_frequent_symptom_its_own_average_and_keeps_overall_average`, `test_fr04_rounds_each_symptoms_average_severity_to_2_decimals_half_up`, `test_fr04_counts_different_capitalisation_and_spaces_as_same_symptom`, `test_fr04_counts_frequency_on_symptom_field_not_notes`, `test_fr04_rounds_overall_average_severity_to_2_decimals`, `test_fr04_rounds_overall_average_severity_half_up`, `test_fr04_returns_empty_insights_when_no_entries_in_period`, `test_fr04_returns_empty_insights_for_patient_who_never_logged`, `test_fr04_single_entry_is_most_frequent_and_its_severity_is_the_average`, `test_fr04_only_start_date_uses_everything_from_that_date`, `test_fr04_only_end_date_uses_everything_up_to_that_date`, `test_fr04_no_dates_uses_all_of_the_patients_entries`, `test_fr04_rejects_start_date_after_end_date`, `test_fr04_rejects_invalid_date_format`, `test_fr04_rejects_invalid_patient_id` | ✅ |
 | FR-05 | Error handlers | | ⬜ |
 | FR-06 | Streamlit UI | Checked by hand: Log a symptom form (success, field errors, API down); My symptoms table (date filters, newest first, no-results message and future-start hint, field errors, long-notes preview) | 🟨 |
