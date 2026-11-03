@@ -36,6 +36,15 @@ The README's **AI usage** section is written from this file.
 
 ---
 
+### 3. Misleading "no results" message in My symptoms
+**📅 3 Nov · Area: UI (FR-06)**
+
+- **What the AI produced:** The My symptoms screen always said "No symptoms found for this period." when nothing came back, even when no dates were set and the patient had simply never logged anything.
+- **What I found / changed:** Noticed it while testing with a new patient ID. Had the message changed to name what was searched: "Patient 42 has not logged any symptoms yet." with no dates, or the actual period (e.g. "No symptoms found between 2026-09-01 and 2026-09-30.") when dates are set.
+- **Why:** FR-06 says patients must use the UI "without confusion"; a message about a "period" when no period was chosen does not tell the patient what actually happened.
+
+---
+
 <!--
 Template for new entries (copy, paste above this comment and fill in):
 
