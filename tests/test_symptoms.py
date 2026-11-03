@@ -158,6 +158,28 @@ def test_fr01_rejects_patient_id_that_is_not_a_positive_whole_number(
     assert db_session.scalars(select(Symptom)).all() == []
 
 
+@pytest.mark.parametrize("patient_id", ["2147483648", "100000000000000000000"])
+def test_fr01_rejects_patient_id_larger_than_2147483647(
+    client: TestClient, db_session: Session, valid_payload: dict[str, Any], patient_id: str
+) -> None:
+    response = client.post(f"/patients/{patient_id}/symptoms", json=valid_payload)
+
+    assert response.status_code == 422
+    assert response.json()["error"]["details"] == [
+        {"field": "patient_id", "message": "patient_id must be at most 2147483647"}
+    ]
+    assert db_session.scalars(select(Symptom)).all() == []
+
+
+def test_fr01_accepts_largest_patient_id_2147483647(
+    client: TestClient, valid_payload: dict[str, Any]
+) -> None:
+    response = client.post("/patients/2147483647/symptoms", json=valid_payload)
+
+    assert response.status_code == 201
+    assert response.json()["patient_id"] == 2147483647
+
+
 def test_fr01_ignores_extra_unknown_fields(
     client: TestClient, valid_payload: dict[str, Any]
 ) -> None:
@@ -334,3 +356,22 @@ def test_fr02_rejects_patient_id_that_is_not_a_positive_whole_number(
     assert response.json()["error"]["details"] == [
         {"field": "patient_id", "message": "patient_id must be a positive whole number"}
     ]
+
+
+@pytest.mark.parametrize("patient_id", ["2147483648", "100000000000000000000"])
+def test_fr02_rejects_patient_id_larger_than_2147483647(
+    client: TestClient, patient_id: str
+) -> None:
+    response = client.get(f"/patients/{patient_id}/symptoms")
+
+    assert response.status_code == 422
+    assert response.json()["error"]["details"] == [
+        {"field": "patient_id", "message": "patient_id must be at most 2147483647"}
+    ]
+
+
+def test_fr02_accepts_largest_patient_id_2147483647(client: TestClient) -> None:
+    response = client.get("/patients/2147483647/symptoms")
+
+    assert response.status_code == 200
+    assert response.json() == []

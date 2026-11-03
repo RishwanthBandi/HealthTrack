@@ -12,11 +12,17 @@ SYMPTOM_MAX_LENGTH = 100
 NOTES_MAX_LENGTH = 2000
 SEVERITY_MIN = 1
 SEVERITY_MAX = 5
+PATIENT_ID_MAX = 2_147_483_647  # standard 32-bit integer limit
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 PatientId = Annotated[
     int,
-    Path(gt=0, description="The patient's ID: a positive whole number.", examples=[1]),
+    Path(
+        gt=0,
+        le=PATIENT_ID_MAX,
+        description=f"The patient's ID: a whole number from 1 to {PATIENT_ID_MAX}.",
+        examples=[1],
+    ),
 ]
 
 

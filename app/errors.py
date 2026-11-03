@@ -25,6 +25,8 @@ def friendly_message(error: dict[str, Any]) -> str:
         return f"{field} is required"
     if error_type in {"int_parsing", "int_type", "greater_than"}:
         return f"{field} must be a positive whole number"
+    if error_type == "less_than_equal":
+        return f"{field} must be at most {error['ctx']['le']}"
     if error_type == "json_invalid":
         return "the request body is not valid JSON"
     return error["msg"]
