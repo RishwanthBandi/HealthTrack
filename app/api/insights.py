@@ -6,7 +6,14 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.schemas import DATE_RANGE_ERROR_EXAMPLE, DateRange, ErrorResponse, Insights, PatientId
+from app.schemas import (
+    DATABASE_ERROR_EXAMPLE,
+    DATE_RANGE_ERROR_EXAMPLE,
+    DateRange,
+    ErrorResponse,
+    Insights,
+    PatientId,
+)
 from app.services import insights_service
 
 router = APIRouter(prefix="/patients/{patient_id}/insights", tags=["Insights"])
@@ -21,6 +28,11 @@ router = APIRouter(prefix="/patients/{patient_id}/insights", tags=["Insights"])
             "model": ErrorResponse,
             "description": "Invalid patient ID or dates. Every problem is listed in `details`.",
             "content": {"application/json": {"example": DATE_RANGE_ERROR_EXAMPLE}},
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Database error. The request had no effect; try again later.",
+            "content": {"application/json": {"example": DATABASE_ERROR_EXAMPLE}},
         },
     },
 )

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.schemas import (
+    DATABASE_ERROR_EXAMPLE,
     DATE_RANGE_ERROR_EXAMPLE,
     VALIDATION_ERROR_EXAMPLE,
     DateRange,
@@ -30,6 +31,11 @@ router = APIRouter(prefix="/patients/{patient_id}/symptoms", tags=["Symptoms"])
             "model": ErrorResponse,
             "description": "Invalid input. Every problem is listed in `details`.",
             "content": {"application/json": {"example": VALIDATION_ERROR_EXAMPLE}},
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Database error. The request had no effect; try again later.",
+            "content": {"application/json": {"example": DATABASE_ERROR_EXAMPLE}},
         },
     },
 )
@@ -59,6 +65,11 @@ def log_symptom(
             "model": ErrorResponse,
             "description": "Invalid patient ID or dates. Every problem is listed in `details`.",
             "content": {"application/json": {"example": DATE_RANGE_ERROR_EXAMPLE}},
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": ErrorResponse,
+            "description": "Database error. The request had no effect; try again later.",
+            "content": {"application/json": {"example": DATABASE_ERROR_EXAMPLE}},
         },
     },
 )

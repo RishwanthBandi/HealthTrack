@@ -269,6 +269,10 @@ VALIDATION_ERROR_EXAMPLE = {
     }
 }
 
+DATABASE_ERROR_MESSAGE = "The service could not reach the database. Please try again later."
+
+DATABASE_ERROR_EXAMPLE = {"error": {"code": "database_error", "message": DATABASE_ERROR_MESSAGE}}
+
 DATE_RANGE_ERROR_EXAMPLE = {
     "error": {
         "code": "validation_error",
