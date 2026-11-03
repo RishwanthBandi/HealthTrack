@@ -66,6 +66,7 @@ A patient can log a symptom with a **symptom name**, optional **notes**, a **dat
 | `notes` missing | Accepted (notes are optional) |
 | `notes` longer than 2,000 characters | 422 error: notes too long |
 | `patient_id` is 0, negative or not a number | 422 error |
+| `patient_id` larger than 2,147,483,647 | 422 error: "patient_id must be at most 2147483647" |
 | Extra unknown fields in the body | Ignored |
 
 **Status:** ✅ (API; UI form follows in FR-06)
@@ -94,8 +95,10 @@ A patient can log a symptom with a **symptom name**, optional **notes**, a **dat
 | Neither given | All of the patient's symptoms |
 | `start_date` after `end_date` | 422 error: "start_date must be on or before end_date" |
 | Invalid date format | 422 error |
+| `patient_id` is 0, negative or not a number | 422 error |
+| `patient_id` larger than 2,147,483,647 | 422 error: "patient_id must be at most 2147483647" |
 
-**Status:** ⬜
+**Status:** ✅ (API; UI table follows in FR-06)
 
 ---
 
@@ -246,7 +249,7 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 
 | # | Assumption / decision | Why |
 |---|---|---|
-| A1 | A patient is identified only by a positive whole-number `patient_id`; there is no separate "create patient" step | No auth or patient management is asked for |
+| A1 | A patient is identified only by a positive whole-number `patient_id` (1 to 2,147,483,647, the standard 32-bit integer limit, so it works with any database); there is no separate "create patient" step | No auth or patient management is asked for |
 | A2 | `date` is the day the symptom happened; `created_at` records entry time automatically | "Daily symptoms" in the brief |
 | A3 | Future dates are rejected | You can't experience a symptom in the future |
 | A4 | `date` is required in the API (the UI pre-fills today) | The brief says patients input the date |
@@ -263,8 +266,8 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 
 | FR | Endpoint / component | Tests | Status |
 |---|---|---|---|
-| FR-01 | `POST /patients/{patient_id}/symptoms` | `tests/test_symptoms.py`: `test_fr01_logs_symptom_and_returns_201_with_saved_record`, `test_fr01_saves_symptom_in_database_with_correct_date_and_severity`, `test_fr01_trims_symptom_and_notes_before_saving`, `test_fr01_stores_empty_or_whitespace_only_notes_as_null`, `test_fr01_accepts_missing_notes`, `test_fr01_accepts_notes_of_exactly_2000_characters`, `test_fr01_rejects_notes_longer_than_2000_characters`, `test_fr01_rejects_missing_date`, `test_fr01_rejects_date_that_is_not_a_real_yyyy_mm_dd_date`, `test_fr01_rejects_future_date`, `test_fr01_accepts_today_as_date`, `test_fr01_rejects_patient_id_that_is_not_a_positive_whole_number`, `test_fr01_ignores_extra_unknown_fields` | ✅ |
-| FR-02 | `GET /patients/{patient_id}/symptoms` | | ⬜ |
+| FR-01 | `POST /patients/{patient_id}/symptoms` | `tests/test_symptoms.py`: `test_fr01_logs_symptom_and_returns_201_with_saved_record`, `test_fr01_saves_symptom_in_database_with_correct_date_and_severity`, `test_fr01_trims_symptom_and_notes_before_saving`, `test_fr01_stores_empty_or_whitespace_only_notes_as_null`, `test_fr01_accepts_missing_notes`, `test_fr01_accepts_notes_of_exactly_2000_characters`, `test_fr01_rejects_notes_longer_than_2000_characters`, `test_fr01_rejects_missing_date`, `test_fr01_rejects_date_that_is_not_a_real_yyyy_mm_dd_date`, `test_fr01_rejects_future_date`, `test_fr01_accepts_today_as_date`, `test_fr01_rejects_patient_id_that_is_not_a_positive_whole_number`, `test_fr01_rejects_patient_id_larger_than_2147483647`, `test_fr01_accepts_largest_patient_id_2147483647`, `test_fr01_ignores_extra_unknown_fields` | ✅ |
+| FR-02 | `GET /patients/{patient_id}/symptoms` | `tests/test_symptoms.py`: `test_fr02_returns_only_symptoms_within_date_range`, `test_fr02_includes_entries_on_start_date_and_end_date`, `test_fr02_accepts_same_start_and_end_date`, `test_fr02_returns_only_the_requested_patients_symptoms`, `test_fr02_sorts_symptoms_newest_first`, `test_fr02_returns_all_fields_of_each_symptom`, `test_fr02_returns_empty_list_when_no_symptoms_in_range`, `test_fr02_returns_empty_list_for_patient_who_never_logged`, `test_fr02_only_start_date_returns_everything_from_that_date`, `test_fr02_only_end_date_returns_everything_up_to_that_date`, `test_fr02_no_dates_returns_all_of_the_patients_symptoms`, `test_fr02_rejects_start_date_after_end_date`, `test_fr02_rejects_invalid_date_format`, `test_fr02_rejects_patient_id_that_is_not_a_positive_whole_number`, `test_fr02_rejects_patient_id_larger_than_2147483647`, `test_fr02_accepts_largest_patient_id_2147483647` | ✅ |
 | FR-03 | Schemas (validation) | `tests/test_validation.py`: `test_fr03_validation_error_uses_standard_error_format`, `test_fr03_rejects_severity_outside_1_to_5`, `test_fr03_rejects_severity_that_is_not_a_whole_number`, `test_fr03_rejects_missing_severity`, `test_fr03_accepts_severity_boundaries_1_and_5`, `test_fr03_rejects_empty_or_whitespace_only_symptom`, `test_fr03_rejects_missing_symptom`, `test_fr03_rejects_symptom_that_is_not_text`, `test_fr03_rejects_symptom_longer_than_100_characters`, `test_fr03_accepts_symptom_of_exactly_100_characters`, `test_fr03_lists_all_problems_when_several_fields_are_wrong` | ✅ |
 | FR-04 | `GET /patients/{patient_id}/insights` | | ⬜ |
 | FR-05 | Error handlers | | ⬜ |
