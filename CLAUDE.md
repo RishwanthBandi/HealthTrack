@@ -17,6 +17,8 @@ Follow these rules in every task.
 - pytest + FastAPI `TestClient` (tests)
 - ruff (formatting and linting)
 - Streamlit + `requests` (UI, FR-06 only)
+- uvicorn (runs the API server)
+- httpx (required by FastAPI's `TestClient`)
 
 **Ask me before adding any other library.**
 
@@ -46,6 +48,7 @@ tests/
   test_validation.py
   test_insights.py
   test_errors.py
+pyproject.toml         # ruff and pytest settings
 ```
 
 ## Layer rules (separation of concerns)
@@ -107,6 +110,7 @@ Request flow: **API route → schema validation → service → repository → d
   - `chore: set up project structure and tooling`
 - `.gitignore` must exclude: `.env`, `*.db`, `__pycache__/`, `.venv/`, `.pytest_cache/`, `.ruff_cache/`.
 - **Don't commit until I've seen the changes and said OK.**
+- After every commit, push to GitHub (git push).
 
 ## How we work
 
