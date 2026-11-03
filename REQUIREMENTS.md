@@ -69,7 +69,7 @@ A patient can log a symptom with a **symptom name**, optional **notes**, a **dat
 | `patient_id` larger than 2,147,483,647 | 422 error: "patient_id must be at most 2147483647" |
 | Extra unknown fields in the body | Ignored |
 
-**Status:** ✅ (API; UI form follows in FR-06)
+**Status:** ✅
 
 ---
 
@@ -98,7 +98,7 @@ A patient can log a symptom with a **symptom name**, optional **notes**, a **dat
 | `patient_id` is 0, negative or not a number | 422 error |
 | `patient_id` larger than 2,147,483,647 | 422 error: "patient_id must be at most 2147483647" |
 
-**Status:** ✅ (API; UI table follows in FR-06)
+**Status:** ✅
 
 ---
 
@@ -167,7 +167,7 @@ Show the **most frequent symptom(s)** and the **average severity** for a period.
 | Only one entry | That entry is the most frequent; its own average and `overall_average_severity` both equal its severity |
 | `start_date` after `end_date` | 422 error |
 
-**Status:** ✅ (API; UI insights section follows in FR-06)
+**Status:** ✅
 
 ---
 
@@ -203,7 +203,7 @@ Validation errors also include field details:
 - Log the real error on the server side for debugging.
 - A failed request never leaves half-saved data.
 
-**Status:** ✅ (API; UI error messages follow in FR-06)
+**Status:** ✅
 
 ---
 
@@ -223,7 +223,7 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 - The UI talks **only to the API** (never directly to the database), so the same validation applies everywhere.
 - If the API is not running, show a friendly message ("Cannot reach the HealthTrack API. Is it running?") instead of crashing.
 
-**Status:** 🟨 (Log a symptom, My symptoms and Insights screens done; error handling follows in Slice 4)
+**Status:** ✅
 
 ---
 
@@ -273,4 +273,4 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 | FR-03 | Schemas (validation) | `tests/test_validation.py`: `test_fr03_validation_error_uses_standard_error_format`, `test_fr03_rejects_severity_outside_1_to_5`, `test_fr03_rejects_severity_that_is_not_a_whole_number`, `test_fr03_rejects_missing_severity`, `test_fr03_accepts_severity_boundaries_1_and_5`, `test_fr03_rejects_empty_or_whitespace_only_symptom`, `test_fr03_rejects_missing_symptom`, `test_fr03_rejects_symptom_that_is_not_text`, `test_fr03_rejects_symptom_longer_than_100_characters`, `test_fr03_accepts_symptom_of_exactly_100_characters`, `test_fr03_lists_all_problems_when_several_fields_are_wrong` | ✅ |
 | FR-04 | `GET /patients/{patient_id}/insights` | `tests/test_insights.py`: `test_fr04_returns_most_frequent_symptom_and_overall_average_severity`, `test_fr04_includes_entries_on_start_date_and_end_date`, `test_fr04_only_uses_the_requested_patients_entries`, `test_fr04_returns_all_tied_symptoms`, `test_fr04_gives_each_frequent_symptom_its_own_average_and_keeps_overall_average`, `test_fr04_rounds_each_symptoms_average_severity_to_2_decimals_half_up`, `test_fr04_counts_different_capitalisation_and_spaces_as_same_symptom`, `test_fr04_counts_frequency_on_symptom_field_not_notes`, `test_fr04_rounds_overall_average_severity_to_2_decimals`, `test_fr04_rounds_overall_average_severity_half_up`, `test_fr04_returns_empty_insights_when_no_entries_in_period`, `test_fr04_returns_empty_insights_for_patient_who_never_logged`, `test_fr04_single_entry_is_most_frequent_and_its_severity_is_the_average`, `test_fr04_only_start_date_uses_everything_from_that_date`, `test_fr04_only_end_date_uses_everything_up_to_that_date`, `test_fr04_no_dates_uses_all_of_the_patients_entries`, `test_fr04_rejects_start_date_after_end_date`, `test_fr04_rejects_invalid_date_format`, `test_fr04_rejects_invalid_patient_id` | ✅ |
 | FR-05 | Error handlers | `tests/test_errors.py`: `test_fr05_database_error_returns_500_with_standard_error_format`, `test_fr05_database_error_does_not_reveal_sql_or_internal_details`, `test_fr05_database_error_is_logged_on_the_server`, `test_fr05_failed_save_leaves_no_half_saved_data`, `test_fr05_unexpected_error_returns_500_internal_error_without_details`, `test_fr05_unknown_url_returns_404_not_found`, `test_fr05_wrong_http_method_returns_405_method_not_allowed`, `test_fr05_malformed_json_body_returns_422_validation_error`, `test_fr05_every_endpoint_documents_the_500_database_error` | ✅ |
-| FR-06 | Streamlit UI | Checked by hand: Log a symptom form (success, field errors, API down); My symptoms table (date filters, newest first, no-results message and future-start hint, field errors, long-notes preview); Insights section (top symptom, ties with each symptom's own average, overall average labelled "all N entries", no-results messages, field errors, API down) | 🟨 |
+| FR-06 | Streamlit UI | Checked by hand: Log a symptom form (success, field errors, API down); My symptoms table (date filters, newest first, no-results message and future-start hint, field errors, long-notes preview); Insights section (top symptom, ties with each symptom's own average, overall average labelled "all N entries", no-results messages, field errors, API down); error handling on all 3 screens (database error message, API down, API too slow, unreadable or unexpected API answers show a friendly message, never a traceback) | ✅ |
