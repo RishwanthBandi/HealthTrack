@@ -1,0 +1,14 @@
+# API
+fastapi==0.162.0
+uvicorn==0.54.0
+pydantic==2.14.2
+sqlalchemy==2.1.6
+
+# UI
+streamlit==1.66.1
+requests==2.34.2
+
+# Tests and linting
+pytest==9.2.0
+httpx==0.28.1
+ruff==0.17.3
