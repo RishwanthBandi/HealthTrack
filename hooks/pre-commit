@@ -1,0 +1,21 @@
+#!/bin/sh
+# Runs before every commit. If any check fails, the commit is blocked.
+# One-time setup: git config core.hooksPath hooks
+
+set -e
+
+# Use the project's virtual environment, also when committing from the IDE.
+if [ -x .venv/bin/pytest ]; then
+    PATH="$(pwd)/.venv/bin:$PATH"
+fi
+
+echo "pre-commit: pytest"
+pytest -q -p no:warnings
+
+echo "pre-commit: ruff check"
+ruff check .
+
+echo "pre-commit: ruff format --check"
+ruff format --check .
+
+echo "pre-commit: all checks passed"

@@ -49,6 +49,8 @@ tests/
   test_insights.py
   test_errors.py
 pyproject.toml         # ruff and pytest settings
+hooks/
+  pre-commit           # runs pytest + ruff before every commit; blocks the commit on failure
 ```
 
 ## Layer rules (separation of concerns)
@@ -91,7 +93,14 @@ Request flow: **API route → schema validation → service → repository → d
 - Test names say what they check, e.g. `test_fr03_rejects_whitespace_only_symptom`.
 - Tests use a **separate test database** and never touch the real one.
 - Simulate the database failure (FR-05) by overriding the database dependency so it raises an error.
-- Run `pytest` and `ruff check .` before every commit. Both must pass.
+- Before every commit, run all three checks. All must pass:
+  `pytest` · `ruff check .` · `ruff format --check .`
+- The git pre-commit hook (`hooks/pre-commit`) runs the same three checks and blocks a failing commit.
+  Never bypass it (no `git commit --no-verify`). If a check fails, fix the cause, then commit.
+- Every summary you show me (after a slice part, a fix, or a commit) ends with a **Checks** line
+  containing the actual results from that run, e.g.:
+  `Checks: pytest 74 passed · ruff check: All checks passed · ruff format --check: 30 files already formatted`
+  If any check was not run, say so in that line. Never report a check you did not run.
 
 ## Security
 
@@ -129,6 +138,7 @@ Request flow: **API route → schema validation → service → repository → d
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+git config core.hooksPath hooks   # one-time: enable the pre-commit checks
 
 # run the API (docs at http://localhost:8000/docs)
 uvicorn app.main:app --reload
@@ -139,5 +149,6 @@ streamlit run ui/streamlit_app.py
 # test and lint
 pytest
 ruff check .
-ruff format .
+ruff format .            # fix formatting
+ruff format --check .    # check formatting only (used by the hook)
 ```
