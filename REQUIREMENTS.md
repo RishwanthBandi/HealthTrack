@@ -218,7 +218,7 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 - The UI talks **only to the API** (never directly to the database), so the same validation applies everywhere.
 - If the API is not running, show a friendly message ("Cannot reach the HealthTrack API. Is it running?") instead of crashing.
 
-**Status:** ⬜
+**Status:** 🟨 (Log a symptom screen done)
 
 ---
 
@@ -268,4 +268,4 @@ A user-friendly interface built with **Streamlit** to log symptoms and view insi
 | FR-03 | Schemas (validation) | `tests/test_validation.py`: `test_fr03_validation_error_uses_standard_error_format`, `test_fr03_rejects_severity_outside_1_to_5`, `test_fr03_rejects_severity_that_is_not_a_whole_number`, `test_fr03_rejects_missing_severity`, `test_fr03_accepts_severity_boundaries_1_and_5`, `test_fr03_rejects_empty_or_whitespace_only_symptom`, `test_fr03_rejects_missing_symptom`, `test_fr03_rejects_symptom_that_is_not_text`, `test_fr03_rejects_symptom_longer_than_100_characters`, `test_fr03_accepts_symptom_of_exactly_100_characters`, `test_fr03_lists_all_problems_when_several_fields_are_wrong` | ✅ |
 | FR-04 | `GET /patients/{patient_id}/insights` | | ⬜ |
 | FR-05 | Error handlers | | ⬜ |
-| FR-06 | Streamlit UI | | ⬜ |
+| FR-06 | Streamlit UI | Checked by hand: Log a symptom form (success, field errors, API down) | 🟨 |
