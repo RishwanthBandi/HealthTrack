@@ -44,12 +44,31 @@ def list_symptoms(
 
     Empty dates are left out of the request, meaning "no limit".
     """
+    params = date_range_params(start_date, end_date)
+    return send_request("GET", patient_url(patient_id, "symptoms"), params=params)
+
+
+def get_insights(
+    patient_id: str, start_date: datetime.date | None, end_date: datetime.date | None
+) -> dict[str, Any]:
+    """A patient's insights for the date range, or raise ApiError.
+
+    Empty dates are left out of the request, meaning "no limit".
+    """
+    params = date_range_params(start_date, end_date)
+    return send_request("GET", patient_url(patient_id, "insights"), params=params)
+
+
+def date_range_params(
+    start_date: datetime.date | None, end_date: datetime.date | None
+) -> dict[str, str]:
+    """Query parameters for the dates that were given; empty dates are left out."""
     params = {}
     if start_date is not None:
         params["start_date"] = start_date.isoformat()
     if end_date is not None:
         params["end_date"] = end_date.isoformat()
-    return send_request("GET", patient_url(patient_id, "symptoms"), params=params)
+    return params
 
 
 def patient_url(patient_id: str, resource: str) -> str:
