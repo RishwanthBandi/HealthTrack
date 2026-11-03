@@ -66,6 +66,18 @@ The README's **AI usage** section is written from this file.
 
 ---
 
+### 4. The overall average looked like it belonged to tied symptoms
+**📅 3 Nov · Area: Insights (FR-04)**
+
+- **Problem:** With a tie (fever ×2, headache ×2), the response showed one average severity right after both symptoms, so it looked like their shared average.
+- **How I found it:** While testing the insights endpoint in `/docs`.
+- **Cause:** Not a bug: the value is the overall average for the period, as FR-04 requires. But the response didn't make that clear.
+- **Fix:** Kept the overall average and added each symptom's own average to the list. The UI now labels the overall value "Average severity (all entries)".
+- **How I checked it:** New tests for per-symptom averages; retested the tie case in `/docs` and the UI.
+- **Why it matters:** Patients and doctors must not misread health data. Seeing which symptom is more severe is also more useful.
+
+---
+
 <!--
 Template for new entries (copy, paste above this comment and fill in):
 
