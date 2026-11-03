@@ -5,7 +5,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api import symptoms
 from app.db import engine
+from app.errors import register_error_handlers
 from app.models import Base
 
 
@@ -22,3 +24,6 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+register_error_handlers(app)
+app.include_router(symptoms.router)
