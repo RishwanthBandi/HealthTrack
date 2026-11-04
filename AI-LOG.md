@@ -56,14 +56,15 @@ The README's **AI usage** section is written from this file.
 ---
 
 ### 3. A very large patient ID crashed the API
-**📅 3 Nov · Area: Validation (FR-01, FR-02)**
 
-- **Problem:** A patient ID like `100000000000000000000` made the API crash with a plain *"Internal Server Error"* instead of a clear message.
-- **How I found it:** I asked Claude to review the slice for edge cases, and it found this crash.
-- **Cause:** The ID was only checked as "a positive whole number". A huge number passes that check, but it's too big for the database to store, so the database crashed.
-- **Fix:** I decided on a maximum patient ID of **2,147,483,647**. Bigger IDs now get a clear `422` error: *"patient_id must be at most 2147483647"*.
-- **How I checked it:** 4 new tests for saving and reading: too-big IDs and exactly at the limit. The too-big tests failed with the real crash before the fix; all pass after it.
-- **Why it matters:** Bad input should always get a clear error, never a crash. 2,147,483,647 is the limit of the standard INTEGER type in most databases, so it keeps working if SQLite is replaced later.
+📅 3 Nov · Area: Validation (FR-01, FR-02)
+
+- **Problem:** A patient ID like `100000000000000000000` made the API crash with a plain "Internal Server Error" instead of returning a clear validation message.
+- **How I found it:** While testing the API with different patient ID values, I tried an extremely large number (`100000000000000000000`). Instead of returning a proper validation error, the API crashed. This helped me identify an edge case in the patient ID validation.
+- **Cause:** The ID was only checked as a positive whole number. A huge number passes that check, but it is too large for the database's INTEGER type to store.
+- **Fix:** I introduced a maximum patient ID limit of `2,147,483,647`. IDs exceeding this limit now return a clear `422` error: `patient_id must be at most 2147483647`.
+- **How I verified it:** Added 4 tests covering saving and reading patients with IDs exceeding the limit and IDs exactly at the limit. The oversized ID tests reproduced the actual crash before the fix, and all 4 tests passed after the fix.
+- **Why it matters:** Invalid input should always produce a clear validation error rather than an unexpected server crash. This limit also ensures compatibility with the standard 32-bit signed INTEGER range used by many databases.
 
 ---
 
