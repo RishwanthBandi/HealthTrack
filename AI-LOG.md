@@ -132,6 +132,29 @@ The README's **AI usage** section is written from this file.
 
 ---
 
+### 9. Symptom names were shown inconsistently between screens
+**📅 4 Nov · Area: UI – My symptoms and Insights (FR-04, FR-06)**
+
+- **Problem:** Insights grouped different spellings of the same symptom ("Headache", "HEadAche", "headache") as one, but showed the name in lowercase. My symptoms showed each name exactly as typed. The same symptom looked different on different screens.
+- **How I found it:** While comparing the My symptoms list with the Insights tab for the same patient.
+- **Decision:** Change only how names are **displayed**, never what's **stored**. The database keeps exactly what the patient typed, and the UI shows every name in one tidy format.
+- **Fix:** All screens (My symptoms cards, the Insights table, the "Symptoms logged" chart and the "Saved" message after logging) now show symptom names trimmed, with a capital first letter and the rest lowercase, e.g. "Headache".
+- **How I checked it:** Logged "  HEadAche " for a patient who already had "HEADACHE", "headache" and "Headache". Every screen shows "Headache", and the API still returns the original text for each entry.
+- **Why it matters:** A patient should see the same symptom the same way everywhere. Keeping the stored text unchanged means no patient data is altered.
+
+---
+
+### 10. The daily severity chart was hard to understand
+**📅 4 Nov · Area: UI – Insights charts (FR-06)**
+
+- **Problem:** The chart's date axis was spread evenly across calendar time. One old entry from 2019 pushed all the recent entries into a thin spike on the far right, so the newest dates couldn't be read. The axis also showed dates with no data, like "2022-09-23", and it wasn't clear what the chart was showing.
+- **How I found it:** While looking at the Insights tab for a patient with an old entry, from the patient's point of view.
+- **Fix:** Redesigned it with the title "How severe were your symptoms each day?". Each day with entries is one evenly spaced point labelled with its date, oldest left and newest right; only the most recent 14 entry-days are shown, with a caption saying so. The severity axis is fixed at 1–5.
+- **How I checked it:** With a 2019 entry and 18 recent days, the chart shows the 14 newest days, each with a readable date, plus the caption "Showing the most recent 14 of 19 days with entries." Hovering over a point shows its date, average severity and number of entries, matching the stored data.
+- **Why it matters:** A chart in a health app should be understood at a glance. One that needs explaining, or hides the newest data, does more harm than good.
+
+---
+
 <!--
 Template for new entries (copy, paste above this comment and fill in):
 
