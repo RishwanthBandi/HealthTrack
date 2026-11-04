@@ -24,6 +24,7 @@ SEVERITY_LABELS = {
 MARKDOWN_SPECIAL_CHARACTER = re.compile(r"([!-/:-@\[-`{-~])")
 CHART_HEIGHT = 300
 BAR_HEIGHT = 36
+MAX_CHART_DAYS = 14
 # Medium grey: readable on both the light and the dark Streamlit theme.
 CHART_LABEL_COLOR = "#808495"
 UNEXPECTED_ERROR_MESSAGE = (
@@ -216,25 +217,34 @@ def show_insights(insights: dict[str, Any]) -> None:
 
 def show_charts(entries: list[dict[str, Any]]) -> None:
     """Daily severity and how often each symptom was logged. Fixed charts: no zoom or pan."""
-    st.subheader("Daily severity")
+    st.subheader("How severe were your symptoms each day?")
     st.caption("Average severity per day (1 = mild, 5 = severe)")
-    st.altair_chart(daily_severity_chart(average_severity_per_day(entries)), width="stretch")
+    daily_severity = average_severity_per_day(entries)
+    if len(daily_severity) > MAX_CHART_DAYS:
+        st.caption(
+            f"Showing the most recent {MAX_CHART_DAYS} of {len(daily_severity)} days with entries."
+        )
+        daily_severity = daily_severity.tail(MAX_CHART_DAYS)
+    st.altair_chart(daily_severity_chart(daily_severity), width="stretch")
     st.subheader("Symptoms logged")
     st.altair_chart(symptoms_logged_chart(times_logged_per_symptom(entries)), width="stretch")
 
 
 def daily_severity_chart(daily_severity: pd.DataFrame) -> alt.Chart:
-    """Line with a dot for each day; severity axis fixed from 1 to 5, dates without times."""
+    """Line with a dot for each day that has entries, evenly spaced, oldest on the left.
+
+    The date axis is a list of days, not a time scale, so a single old entry can't squeeze
+    the recent days together, and days without entries don't appear.
+    """
     return (
         alt.Chart(daily_severity)
         .mark_line(point=alt.OverlayMarkDef(size=80))
         .encode(
             x=alt.X(
-                "utcyearmonthdate(Date):T",
+                "Date:O",
                 title="Date",
-                axis=alt.Axis(
-                    format="%Y-%m-%d", tickCount={"interval": "day", "step": 1}, labelAngle=0
-                ),
+                sort="ascending",
+                axis=alt.Axis(labelAngle=-45, labelOverlap=False),
             ),
             y=alt.Y(
                 "Average severity:Q",
@@ -242,7 +252,7 @@ def daily_severity_chart(daily_severity: pd.DataFrame) -> alt.Chart:
                 axis=alt.Axis(values=list(SEVERITY_LABELS), format="d"),
             ),
             tooltip=[
-                alt.Tooltip("utcyearmonthdate(Date):T", title="Date", format="%Y-%m-%d"),
+                alt.Tooltip("Date:O"),
                 alt.Tooltip("Average severity:Q", format=".2f"),
                 alt.Tooltip("Entries:Q"),
             ],
