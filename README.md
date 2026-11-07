@@ -218,7 +218,7 @@ Tests (`tests/`) use a separate in-memory database for every test and never touc
 
 The following are some important examples of decisions, issues and improvements made during development. Further details are documented in `AI-LOG.md`.
 
-- **Data Model:** The initial design used a single short `description` field. I reviewed the data requirements and identified the need to capture more detailed patient information. I pushed for separate `symptom` and `notes` fields.
+- **Data Model:** The initial design used a single short `symptoms` field. I reviewed the data requirements and identified the need to capture more detailed patient information. I pushed for separate `symptom` and `notes` fields.
 - **Future Dates:** While testing the symptom form, I identified that a future date was silently being saved as today's date. I ensured date validation was handled consistently by the API.
 - **Large Patient IDs:** During edge-case testing, I identified that extremely large patient IDs could cause database errors. I chose a maximum limit of `2,147,483,647` and verified that oversized IDs return a proper 422 validation response instead of causing a server failure.
 - **Insights Calculation:** While reviewing the insights implementation, I noticed that the overall average looked like it belonged to symptoms with tied frequencies. I refined the output to provide individual average severity values and clearly named the overall metric as `overall_average_severity`.
